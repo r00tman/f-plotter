@@ -15,11 +15,13 @@ TEMPLATE = app
 SOURCES += main.cpp\
         widget.cpp \
     plotwidget.cpp \
-    coordinatesystem.cpp
+    coordinatesystem.cpp \
+    parser.cpp
 
 HEADERS  += widget.h \
     plotwidget.h \
     coordinatesystem.h \
-    common.h
+    common.h \
+    parser.h
 
 QMAKE_CXXFLAGS += -std=c++11

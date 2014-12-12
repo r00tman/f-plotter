@@ -9,50 +9,29 @@
 #include <QPushButton>
 #include <QPen>
 
+#include "parser.h"
+
 /*---------------------------------------------------------------------*/
 /*- Из задачи                                                         -*/
 /*---------------------------------------------------------------------*/
 ld a = 0, b = 0.99, eps1 = 1e-12, eps2 = 1e-6;
 
-ld integrate(func_type fun, ld a, ld b) {
-    const ld h = 0.001; // integration step
-    ld result = (fun(a)+fun(b))/2;
-    for (ld it = 1; it < floor((b-a)/h); it += 1) {
-        result += fun(it*h);
-    }
-    result *= h;
-    return result;
-}
-
-ld f1(ld /*x*/) {
-    return 0.2;
-}
-
-ld f1d(ld /*x*/) {
-    return 0;
-}
-
-ld f2(ld x, ld y) {
-    return -x*std::exp(-y*x*x/2)/pow(1-y*y, 1/4.0);
-}
-
-ld f2d(ld x, ld y) {
-    return std::exp(-y*x*x/2)*(y*x*x-1)/pow(1-y*y, 1/4.0);
-}
+expr_t expr = parse("x^3+2*x-x+1");
 
 ld f(ld x) {
-    return f1(x)+integrate(std::bind1st(func_2dtype(f2), x), a, b);
+    return evaluate(expr, x);
 }
 
 ld fd(ld x) {
-    return f1d(x)+integrate(std::bind1st(func_2dtype(f2d), x), a, b);
+    return (f(x+eps1)-f(x))/eps1;
 }
 /*---------------------------------------------------------------------*/
 
 // Newton's method
 ld auto_solve(func_type fun, func_type fund, ld x0) {
+    const size_t MAXITCOUNT = 1000000;
     ld xc = x0;
-    for (;;) {
+    for (size_t itcount = 0; itcount < MAXITCOUNT; ++itcount) {
         ld xn = xc-fun(xc)/fund(xc);
         if (std::abs(xc - xn) < eps2) {
             xc = xn;
@@ -68,6 +47,7 @@ Widget::Widget(QWidget *parent)
     QVBoxLayout *lay = new QVBoxLayout;
     QHBoxLayout *setlay = new QHBoxLayout;
     QPushButton *setxy = new QPushButton("Set range");
+    QPushButton *setf = new QPushButton("Set f(x)");
     QPushButton *nextit = new QPushButton("Next iteration");
     QPushButton *autosolve = new QPushButton("Auto solve");
 
@@ -75,15 +55,27 @@ Widget::Widget(QWidget *parent)
 
     setxy->setDefault(true);
     ltext = new QDoubleSpinBox();
-    ltext->setMinimum(-INF);
+    ltext->setMinimum(-INF);    
     ltext->setMaximum(INF);
+    ltext->setValue(-5);
     rtext = new QDoubleSpinBox();
     rtext->setMinimum(-INF);
     rtext->setMaximum(INF);
+    rtext->setValue(5);
+
+    ltext->setMaximumWidth(100);
+    rtext->setMaximumWidth(100);
 
     setlay->addWidget(ltext);
     setlay->addWidget(rtext);
     setlay->addWidget(setxy);
+
+    m_fun_text = new QLineEdit();
+    m_fun_text->setMinimumWidth(100);
+    setlay->addWidget(m_fun_text);
+
+    setlay->addWidget(setf);
+
     setlay->addWidget(nextit);
     setlay->addWidget(autosolve);
     setlay->addStretch();
@@ -98,6 +90,7 @@ Widget::Widget(QWidget *parent)
     this->setLayout(lay);
 
     connect(setxy, SIGNAL(clicked()), this, SLOT(setLR()));
+    connect(setf, SIGNAL(clicked()), this, SLOT(setF()));
     connect(nextit, SIGNAL(clicked()), this, SLOT(nextIt()));
     connect(autosolve, SIGNAL(clicked()), this, SLOT(autoSolve()));
 
@@ -116,6 +109,11 @@ void Widget::setLR() {
     started = false;    
     m_plot_widget->m_opt_elements.clear();
     repaint();
+}
+
+void Widget::setF() {
+    expr = parse(m_fun_text->text().toStdString());
+    setLR();
 }
 
 void Widget::nextIt() {

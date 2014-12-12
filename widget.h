@@ -2,6 +2,7 @@
 #define WIDGET_H
 
 #include <QWidget>
+#include <QLineEdit>
 #include <QDoubleSpinBox>
 
 #include "common.h"
@@ -12,8 +13,9 @@ class Widget : public QWidget
 {
     Q_OBJECT
 private:
-    PlotWidget *m_plot_widget;
+    PlotWidget *m_plot_widget;    
     QDoubleSpinBox *ltext, *rtext;
+    QLineEdit *m_fun_text;
 
     ld xc;
     bool started;
@@ -24,6 +26,7 @@ public:
 
 private slots:
     void setLR();
+    void setF();
     void nextIt();
     void autoSolve();
 };
